@@ -8,18 +8,14 @@ import android.widget.TextView;
 
 import java.util.List;
 
-/**
- * Created by Harry on 11/24/2017.
- */
-
 public class WalletAdapter extends RecyclerView.Adapter<WalletAdapter.WalletViewHolder> {
 
     private List<Wallet> walletList;
 
-    public class WalletViewHolder extends RecyclerView.ViewHolder {
-        public TextView tvWalletAlias, tvWalletAddress, tvWalletBalance;
+    class WalletViewHolder extends RecyclerView.ViewHolder {
+        TextView tvWalletAlias, tvWalletAddress, tvWalletBalance;
 
-        public WalletViewHolder(View view) {
+        WalletViewHolder(View view) {
             super(view);
             tvWalletAlias = view.findViewById(R.id.tvWalletAlias);
             tvWalletAddress = view.findViewById(R.id.tvWalletAddress);
@@ -27,7 +23,7 @@ public class WalletAdapter extends RecyclerView.Adapter<WalletAdapter.WalletView
         }
     }
 
-    public WalletAdapter(List<Wallet> walletList)
+    WalletAdapter(List<Wallet> walletList)
     {
         this.walletList = walletList;
     }

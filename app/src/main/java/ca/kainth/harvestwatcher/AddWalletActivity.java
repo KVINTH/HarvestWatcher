@@ -56,7 +56,7 @@ public class AddWalletActivity extends AppCompatActivity {
                     editor.putString(walletIdentifier + walletNumber + addressIdentifier, walletAddress);
                     editor.putString(walletIdentifier + walletNumber + aliasIdentifier, walletAlias);
                     editor.apply();
-                    Toast.makeText(AddWalletActivity.this, "Wallet " + walletNumber + "successfully saved.", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(AddWalletActivity.this, "Wallet " + walletNumber + " successfully saved.", Toast.LENGTH_SHORT).show();
                 }
             }
         });
