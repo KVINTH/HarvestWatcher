@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context="ca.kainth.harvestwatcher.AddWalletActivity"
+    android:orientation="vertical">
+
+    <android.support.v7.widget.Toolbar
+        android:id="@+id/my_toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="@color/colorPrimary"
+        android:elevation="4dp"
+        android:theme="@style/ThemeOverlay.AppCompat.ActionBar"
+        app:popupTheme="@style/Theme.AppCompat.Light" />
+
+    <EditText
+        android:id="@+id/etWalletNumber"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:ems="10"
+        android:hint="Wallet Number"
+        android:inputType="number" />
+
+    <EditText
+        android:id="@+id/etWalletAddress"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:ems="10"
+        android:hint="Wallet Address"
+        android:inputType="text|textPersonName" />
+
+    <EditText
+        android:id="@+id/etWalletAlias"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:ems="10"
+        android:hint="Wallet Alias"
+        android:inputType="text|textPersonName" />
+
+    <Button
+        android:id="@+id/btnAddWallet"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Add Wallet" />
+
+    <TextView
+        android:id="@+id/tvWalletAlert"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/wallet_notification" />
+</LinearLayout>
