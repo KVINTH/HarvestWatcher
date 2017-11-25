@@ -8,6 +8,8 @@ import android.widget.TextView;
 
 import java.util.List;
 
+import ca.kainth.harvestwatcher.db.Wallet;
+
 public class WalletAdapter extends RecyclerView.Adapter<WalletAdapter.WalletViewHolder> {
 
     private List<Wallet> walletList;
@@ -39,7 +41,7 @@ public class WalletAdapter extends RecyclerView.Adapter<WalletAdapter.WalletView
     @Override
     public void onBindViewHolder(WalletViewHolder holder, int position) {
         Wallet wallet = walletList.get(position);
-        holder.tvWalletAlias.setText(wallet.getAlias());
+        holder.tvWalletAlias.setText(wallet.getName());
         holder.tvWalletAddress.setText(wallet.getAddress());
         holder.tvWalletBalance.setText(String.valueOf(wallet.getBalance()));
     }

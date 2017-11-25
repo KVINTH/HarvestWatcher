@@ -2,6 +2,7 @@ package ca.kainth.harvestwatcher;
 
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.DefaultItemAnimator;
@@ -22,6 +23,8 @@ import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import ca.kainth.harvestwatcher.db.Wallet;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -56,23 +59,24 @@ public class MainActivity extends AppCompatActivity {
         // load settings
         loadSettings();
 
-        // prepare recycler view
-        walletAdapter = new WalletAdapter(walletList);
-        RecyclerView.LayoutManager mLayoutManager = new LinearLayoutManager(getApplicationContext());
-        recyclerView.setLayoutManager(mLayoutManager);
-        recyclerView.setItemAnimator(new DefaultItemAnimator());
-        recyclerView.setAdapter(walletAdapter);
-
-        // load wallets
-        if (harvestWalletAddresses.size() > 0) {
-            for (int i = 0; i < harvestWalletAddresses.size(); i++) {
-                loadHarvestCoinWalletAddress(harvestWalletAddresses.get(i), harvestWalletDisplayTags.get(i));
-            }
-        }
+        // retrieve information from database
+        new LoadWalletsFromDatabaseTask().execute();
 
     }
 
-    private void loadHarvestCoinWalletAddress(final String address, final String displayTag) {
+    private void loadWallets() {
+        // load wallets
+        if (walletList.size() > 0) {
+            for (int i = 0; i < walletList.size(); i++) {
+
+                // this used to take the wallet address from SharedPreferences and load the list with it.
+                loadWalletFromAPI(walletList.get(i).getAddress(), walletList.get(i).getName());
+            }
+        }
+    }
+
+    // we need to have the wallet address from the database for this to work
+    private void loadWalletFromAPI(final String address, final String displayTag) {
         // instantiate the request queue
         RequestQueue queue = Volley.newRequestQueue(this);
 
@@ -83,14 +87,27 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void onResponse(String response) {
                         final double balance = Double.parseDouble(parseAddressForBalance(response));
-                        runOnUiThread(new Runnable() {
+                        new Thread(new Runnable() {
                             @Override
                             public void run() {
-                                Wallet wallet = new Wallet(displayTag, address, balance);
-                                walletList.add(wallet);
-                                walletAdapter.notifyDataSetChanged();
+                                // retrieve specific wallet
+                                Wallet wallet = App.get().getDB().walletDao().findByName(displayTag);
+                                // add balance to wallet
+                                wallet.setBalance(balance);
+                                App.get().getDB().walletDao().update(wallet);
+//                                Wallet wallet = new Wallet(displayTag, address, balance);
+//                                Wallet wallet1 = new Wallet();
+//                                wallet1.s
+//                                walletList.add(wallet);
+                                runOnUiThread(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        walletAdapter.notifyDataSetChanged();
+                                    }
+                                });
+
                             }
-                        });
+                        }).start();
                     }
                 }, new com.android.volley.Response.ErrorListener() {
             @Override
@@ -117,6 +134,65 @@ public class MainActivity extends AppCompatActivity {
             Toast.makeText(this, e.getMessage(), Toast.LENGTH_SHORT).show();
         }
         return balance;
+    }
+
+    private class LoadWalletsFromDatabaseTask extends AsyncTask<Void, Void, Void> {
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+        }
+
+        @Override
+        protected Void doInBackground(Void... voids) {
+            walletList = App.get().getDB().walletDao().getAll();
+            boolean force = App.get().isForceUpdate();
+            populateWallets(walletList);
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void aVoid) {
+            super.onPostExecute(aVoid);
+            loadWallets();
+        }
+    }
+//    private void loadWalletsFromDatabase() {
+//
+//
+//        new Thread(new Runnable() {
+//            @Override
+//            public void run() {
+//                // creates a list of all the wallets in the database
+//                List<Wallet> walletList = App.get().getDB().walletDao().getAll();
+//                boolean force = App.get().isForceUpdate();
+//                populateWallets(walletList);
+////                if (force || walletList.isEmpty()) {
+////                    //retrieveWallets();
+////                } else {
+////
+////                }
+//            }
+//        }).start();
+//    }
+
+//    private void retrieveWallets() {
+//        List<ca.kainth.harvestwatcher.db.Wallet> walletList = new ArrayList<>();
+//
+//    }
+
+    // uses the walletList retrieved from the database to populate the RecyclerView
+    private void populateWallets(final List<Wallet> walletList) {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                // prepare recycler view
+                walletAdapter = new WalletAdapter(walletList);
+                RecyclerView.LayoutManager mLayoutManager = new LinearLayoutManager(getApplicationContext());
+                recyclerView.setLayoutManager(mLayoutManager);
+                recyclerView.setItemAnimator(new DefaultItemAnimator());
+                recyclerView.setAdapter(walletAdapter);
+            }
+        });
     }
 
     private void loadSettings() {
@@ -174,7 +250,6 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         loadSettings();
-        walletAdapter.notifyDataSetChanged();
         super.onResume();
     }
 }
