@@ -11,8 +11,7 @@ import android.widget.Toast;
 public class AddWalletActivity extends AppCompatActivity {
 
     EditText etWalletAddress;
-    EditText etWalletAlias;
-    EditText etWalletNumber;
+    EditText etWalletName;
     Button btnAddWallet;
     static String walletName;
     static String walletAddress;
@@ -25,21 +24,18 @@ public class AddWalletActivity extends AppCompatActivity {
         setContentView(R.layout.activity_add_wallet);
 
         etWalletAddress = findViewById(R.id.etWalletAddress);
-        etWalletAlias = findViewById(R.id.etWalletAlias);
-        //etWalletNumber = findViewById(R.id.etWalletNumber);
+        etWalletName = findViewById(R.id.etWalletName);
         btnAddWallet = findViewById(R.id.btnAddWallet);
 
         btnAddWallet.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
 
-                walletName = etWalletAlias.getText().toString();
+                walletName = etWalletName.getText().toString();
                 walletAddress = etWalletAddress.getText().toString();
                 boolean isError = false;
 
                 // create a new Wallet object to populate with data
-
-
                 if (walletName.equals("")) {
                     Toast.makeText(AddWalletActivity.this, "Please enter a name for your wallet", Toast.LENGTH_SHORT).show();
                     isError = true;
@@ -52,8 +48,6 @@ public class AddWalletActivity extends AppCompatActivity {
                 if (!isError) {
                     new DatabaseAsync().execute();
                 }
-
-
 
 //
 //                SharedPreferences settings = getSharedPreferences(PREFS_NAME, 0);

@@ -53,30 +53,143 @@ public class MainActivity extends AppCompatActivity {
         Toolbar myToolbar = findViewById(R.id.my_toolbar);
         setSupportActionBar(myToolbar);
 
+        // USE WALLET INFORMATION TO ACCESS WALLET ADDRESS TO LOAD BALANCE FROM API
+        // ADD BALANCE TO THE EXISTING WALLET IN DATABASE
+        // DISPLAY INFO TO USER IN RECYCLERVIEW
+
         // set views
         recyclerView = findViewById(R.id.recycler_view);
+        walletAdapter = new WalletAdapter(walletList);
 
+    }
+
+    @Override
+    protected void onResume() {
         // load settings
         loadSettings();
 
         // retrieve information from database
         new LoadWalletsFromDatabaseTask().execute();
-
+        super.onResume();
     }
 
-    private void loadWallets() {
-        // load wallets
-        if (walletList.size() > 0) {
-            for (int i = 0; i < walletList.size(); i++) {
+    /**
+     * This method inflates the layout of the options menu
+     * @param menu - the menu to inflate
+     * @return - super.onCreateOptionsMenu(menu)
+     */
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.menu, menu);
 
-                // this used to take the wallet address from SharedPreferences and load the list with it.
-                loadWalletFromAPI(walletList.get(i).getAddress(), walletList.get(i).getName());
+        //MenuItem item =
+        return super.onCreateOptionsMenu(menu);
+    }
+
+    /**
+     * This method controls what occurs when an item is selected in the options menu.
+     * @param item - the selected item.
+     * @return
+     */
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch(item.getItemId()) {
+            case R.id.action_settings:
+                return true;
+            case R.id.action_add:
+                Intent intent = new Intent(MainActivity.this, AddWalletActivity.class);
+                startActivity(intent);
+                return true;
+            case R.id.action_refresh:
+                //loadHarvestCoinWalletAddress();
+                loadSettings();
+                refreshData();
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
+        }
+    }
+
+    /**
+     * This AsyncTask retrieves all wallet information from the database
+     */
+    private class LoadWalletsFromDatabaseTask extends AsyncTask<Void, Void, Void> {
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+        }
+
+        @Override
+        protected Void doInBackground(Void... voids) {
+            // loads wallet information from database into a list
+            walletList = App.get().getDB().walletDao().getAll();
+            boolean force = App.get().isForceUpdate();
+            //populateWallets(walletList);
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void aVoid) {
+            super.onPostExecute(aVoid);
+            // load wallet information from the API
+            if (walletList.size() > 0) {
+                for (int i = 0; i < walletList.size(); i++) {
+                    // loads the wallet information from the API
+                    loadWalletFromAPI(walletList.get(i).getAddress(), walletList.get(i).getName());
+                }
             }
         }
     }
 
-    // we need to have the wallet address from the database for this to work
-    private void loadWalletFromAPI(final String address, final String displayTag) {
+    /**
+     * This AsyncTask updates the specified wallet's balance in the database
+     */
+    private class UpdateWalletBalanceInDatabaseTask extends AsyncTask<Void, Void, Void> {
+
+        private String name;
+        private double balance;
+
+        UpdateWalletBalanceInDatabaseTask(String name, double balance) {
+            this.name = name;
+            this.balance = balance;
+        }
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+        }
+
+        @Override
+        protected Void doInBackground(Void... voids) {
+            // retrieve specific wallet
+            Wallet wallet = App.get().getDB().walletDao().findByName(name);
+            // add balance to wallet
+            wallet.setBalance(balance);
+            // update wallet in database
+            App.get().getDB().walletDao().update(wallet);
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    populateWallets(walletList);
+
+                }
+            });
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void aVoid) {
+            super.onPostExecute(aVoid);
+        }
+    }
+
+    /**
+     * This method creates a new request for Wallet information from the API
+     * @param address - the wallet address to get information for
+     * @param name - the name of the wallet in our database
+     */
+    private void loadWalletFromAPI(final String address, final String name) {
         // instantiate the request queue
         RequestQueue queue = Volley.newRequestQueue(this);
 
@@ -87,38 +200,23 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void onResponse(String response) {
                         final double balance = Double.parseDouble(parseAddressForBalance(response));
-                        new Thread(new Runnable() {
-                            @Override
-                            public void run() {
-                                // retrieve specific wallet
-                                Wallet wallet = App.get().getDB().walletDao().findByName(displayTag);
-                                // add balance to wallet
-                                wallet.setBalance(balance);
-                                App.get().getDB().walletDao().update(wallet);
-//                                Wallet wallet = new Wallet(displayTag, address, balance);
-//                                Wallet wallet1 = new Wallet();
-//                                wallet1.s
-//                                walletList.add(wallet);
-                                runOnUiThread(new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        walletAdapter.notifyDataSetChanged();
-                                    }
-                                });
-
-                            }
-                        }).start();
+                        new UpdateWalletBalanceInDatabaseTask(name, balance).execute();
                     }
                 }, new com.android.volley.Response.ErrorListener() {
             @Override
             public void onErrorResponse(VolleyError error) {
-                Toast.makeText(MainActivity.this, "Error loading " + displayTag +  " Balance : "
+                Toast.makeText(MainActivity.this, "Error loading " + name +  " Balance : "
                         + error.getMessage(), Toast.LENGTH_SHORT).show();
             }
         });
         queue.add(stringRequest);
     }
 
+    /**
+     * This method parses a JSON response for the balance of the wallet.
+     * @param body - JSON Response from Harvest Wallet API
+     * @return - balance as a string
+     */
     private String parseAddressForBalance(String body) {
         String balance = "0";
         try {
@@ -136,51 +234,10 @@ public class MainActivity extends AppCompatActivity {
         return balance;
     }
 
-    private class LoadWalletsFromDatabaseTask extends AsyncTask<Void, Void, Void> {
-        @Override
-        protected void onPreExecute() {
-            super.onPreExecute();
-        }
-
-        @Override
-        protected Void doInBackground(Void... voids) {
-            walletList = App.get().getDB().walletDao().getAll();
-            boolean force = App.get().isForceUpdate();
-            populateWallets(walletList);
-            return null;
-        }
-
-        @Override
-        protected void onPostExecute(Void aVoid) {
-            super.onPostExecute(aVoid);
-            loadWallets();
-        }
-    }
-//    private void loadWalletsFromDatabase() {
-//
-//
-//        new Thread(new Runnable() {
-//            @Override
-//            public void run() {
-//                // creates a list of all the wallets in the database
-//                List<Wallet> walletList = App.get().getDB().walletDao().getAll();
-//                boolean force = App.get().isForceUpdate();
-//                populateWallets(walletList);
-////                if (force || walletList.isEmpty()) {
-////                    //retrieveWallets();
-////                } else {
-////
-////                }
-//            }
-//        }).start();
-//    }
-
-//    private void retrieveWallets() {
-//        List<ca.kainth.harvestwatcher.db.Wallet> walletList = new ArrayList<>();
-//
-//    }
-
-    // uses the walletList retrieved from the database to populate the RecyclerView
+    /**
+     * Populates the RecyclerView with the list of Wallets
+     * @param walletList
+     */
     private void populateWallets(final List<Wallet> walletList) {
         runOnUiThread(new Runnable() {
             @Override
@@ -190,11 +247,16 @@ public class MainActivity extends AppCompatActivity {
                 RecyclerView.LayoutManager mLayoutManager = new LinearLayoutManager(getApplicationContext());
                 recyclerView.setLayoutManager(mLayoutManager);
                 recyclerView.setItemAnimator(new DefaultItemAnimator());
+                walletAdapter.setAdapterItems(walletList);
                 recyclerView.setAdapter(walletAdapter);
+                //refreshData();
             }
         });
     }
 
+    /**
+     * This method loads from SharedPreferences
+     */
     private void loadSettings() {
         SharedPreferences settings = getSharedPreferences(PREFS_NAME, 0);
 
@@ -203,34 +265,6 @@ public class MainActivity extends AppCompatActivity {
                 harvestWalletAddresses.add(i, settings.getString("W" + (i + 1) + "Address", "NA"));
                 harvestWalletDisplayTags.add(i, settings.getString("W" + (i + 1) + "Alias", "NA"));
             }
-        }
-    }
-
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        MenuInflater inflater = getMenuInflater();
-        inflater.inflate(R.menu.menu, menu);
-
-        //MenuItem item =
-        return super.onCreateOptionsMenu(menu);
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        switch(item.getItemId()) {
-            case R.id.action_settings:
-                return true;
-            case R.id.action_add:
-                Intent intent = new Intent(MainActivity.this, AddWalletActivity.class);
-                startActivity(intent);
-                return true;
-            case R.id.action_refresh:
-                //loadHarvestCoinWalletAddress();
-                loadSettings();
-                walletAdapter.notifyDataSetChanged();
-                return true;
-            default:
-                return super.onOptionsItemSelected(item);
         }
     }
 
@@ -247,9 +281,11 @@ public class MainActivity extends AppCompatActivity {
         return price;
     }
 
-    @Override
-    protected void onResume() {
-        loadSettings();
-        super.onResume();
+    /**
+     * This method refreshes the data within the RecyclerView */
+    private void refreshData() {
+        walletAdapter.setAdapterItems(walletList);
+        walletAdapter.updateWalletListItems(walletList);
     }
+
 }

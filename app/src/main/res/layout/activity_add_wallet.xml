@@ -17,12 +17,12 @@
         app:popupTheme="@style/Theme.AppCompat.Light" />
 
     <EditText
-        android:id="@+id/etWalletNumber"
+        android:id="@+id/etWalletName"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:ems="10"
-        android:hint="Wallet Number"
-        android:inputType="number" />
+        android:hint="Wallet Name"
+        android:inputType="text|textPersonName" />
 
     <EditText
         android:id="@+id/etWalletAddress"
@@ -32,13 +32,7 @@
         android:hint="Wallet Address"
         android:inputType="text|textPersonName" />
 
-    <EditText
-        android:id="@+id/etWalletAlias"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:ems="10"
-        android:hint="Wallet Alias"
-        android:inputType="text|textPersonName" />
+
 
     <Button
         android:id="@+id/btnAddWallet"
@@ -46,9 +40,4 @@
         android:layout_height="wrap_content"
         android:text="Add Wallet" />
 
-    <TextView
-        android:id="@+id/tvWalletAlert"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="@string/wallet_notification" />
 </LinearLayout>
