@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.DefaultItemAnimator;
 import android.support.v7.widget.LinearLayoutManager;
@@ -12,6 +13,7 @@ import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.android.volley.RequestQueue;
@@ -26,7 +28,7 @@ import java.util.List;
 
 import ca.kainth.harvestwatcher.db.Wallet;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements SwipeRefreshLayout.OnRefreshListener{
 
     // API ENDPOINTS
     private static final String BTC_API_ENDPOINT = "https://api.coindesk.com/v1/bpi/currentprice.json";
@@ -40,6 +42,8 @@ public class MainActivity extends AppCompatActivity {
     private List<Wallet> walletList = new ArrayList<>();
     private RecyclerView recyclerView;
     private WalletAdapter walletAdapter;
+    private TextView tvTotalBalance;
+    SwipeRefreshLayout mSwipeRefreshLayout;
 
     private ArrayList<String> harvestWalletAddresses = new ArrayList<>();
     private ArrayList<String> harvestWalletDisplayTags = new ArrayList<>();
@@ -59,8 +63,15 @@ public class MainActivity extends AppCompatActivity {
 
         // set views
         recyclerView = findViewById(R.id.recycler_view);
+        tvTotalBalance = findViewById(R.id.tvTotalBalance);
         walletAdapter = new WalletAdapter(walletList);
+        mSwipeRefreshLayout = findViewById(R.id.swipe_container);
+        mSwipeRefreshLayout.setOnRefreshListener(this);
+    }
 
+    @Override
+    public void onRefresh() {
+        refreshData();
     }
 
     @Override
@@ -103,6 +114,7 @@ public class MainActivity extends AppCompatActivity {
                 return true;
             case R.id.action_refresh:
                 //loadHarvestCoinWalletAddress();
+                mSwipeRefreshLayout.setRefreshing(true);
                 loadSettings();
                 refreshData();
                 return true;
@@ -142,6 +154,38 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    private class RemoveWalletFromDatabaseTask extends AsyncTask<Void, Void, Void> {
+
+        private int id;
+
+        RemoveWalletFromDatabaseTask(int id) {
+            this.id = id;
+        }
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+        }
+
+        @Override
+        protected Void doInBackground(Void... voids) {
+            // retrieve specific wallet
+            Wallet wallet = App.get().getDB().walletDao().findById(id);
+            // delete wallet from database
+            App.get().getDB().walletDao().delete(wallet);
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    refreshData();
+                }
+            });
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void aVoid) {
+            super.onPostExecute(aVoid);
+        }
+    }
     /**
      * This AsyncTask updates the specified wallet's balance in the database
      */
@@ -250,6 +294,8 @@ public class MainActivity extends AppCompatActivity {
                 walletAdapter.setAdapterItems(walletList);
                 recyclerView.setAdapter(walletAdapter);
                 //refreshData();
+                tvTotalBalance.setText(String.valueOf(calculateTotalBalance(walletList)));
+                mSwipeRefreshLayout.setRefreshing(false);
             }
         });
     }
@@ -284,8 +330,16 @@ public class MainActivity extends AppCompatActivity {
     /**
      * This method refreshes the data within the RecyclerView */
     private void refreshData() {
-        walletAdapter.setAdapterItems(walletList);
-        walletAdapter.updateWalletListItems(walletList);
+        new LoadWalletsFromDatabaseTask().execute();
+    }
+
+
+    private Double calculateTotalBalance(List<Wallet> wallets) {
+        double total = 0;
+        for (Wallet wallet : wallets) {
+            total += wallet.getBalance();
+        }
+        return total;
     }
 
 }

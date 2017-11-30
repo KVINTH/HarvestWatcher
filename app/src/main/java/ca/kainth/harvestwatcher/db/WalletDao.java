@@ -17,6 +17,9 @@ public interface WalletDao {
     @Query("SELECT * FROM wallet")
     List<Wallet> getAll();
 
+    @Query("SELECT * FROM wallet WHERE id LIKE :id LIMIT 1")
+    Wallet findById(int id);
+
     @Query("SELECT * FROM wallet WHERE name LIKE :name LIMIT 1")
     Wallet findByName(String name);
 

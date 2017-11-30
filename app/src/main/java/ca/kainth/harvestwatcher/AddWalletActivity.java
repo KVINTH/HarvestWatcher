@@ -76,7 +76,7 @@ public class AddWalletActivity extends AppCompatActivity {
 
     }
 
-    static class DatabaseAsync extends AsyncTask<Void, Void, Void> {
+     static class DatabaseAsync extends AsyncTask<Void, Void, Void> {
         @Override
         protected void onPreExecute() {
             super.onPreExecute();
@@ -96,8 +96,8 @@ public class AddWalletActivity extends AppCompatActivity {
         }
 
         @Override
-        protected void onPostExecute(Void aVoid) {
-            super.onPostExecute(aVoid);
+        protected void onPostExecute(Void result) {
+            super.onPostExecute(result);
         }
     }
 }
