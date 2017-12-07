@@ -13,6 +13,7 @@ import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -64,9 +65,19 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
         // set views
         recyclerView = findViewById(R.id.recycler_view);
         tvTotalBalance = findViewById(R.id.tvTotalBalance);
-        walletAdapter = new WalletAdapter(walletList);
         mSwipeRefreshLayout = findViewById(R.id.swipe_container);
         mSwipeRefreshLayout.setOnRefreshListener(this);
+        walletAdapter = new WalletAdapter(walletList, new ItemClickListener() {
+            @Override
+            public void onItemClick(View v, int position) {
+                Toast.makeText(MainActivity.this, "clicked position: " + position, Toast.LENGTH_SHORT).show();
+                long walletId = walletList.get(position).getId();
+                Intent intent = new Intent(MainActivity.this, WalletDetailsActivity.class);
+                intent.putExtra("walletId", walletId);
+
+                startActivity(intent);
+            }
+        });
     }
 
     @Override
@@ -107,6 +118,8 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
     public boolean onOptionsItemSelected(MenuItem item) {
         switch(item.getItemId()) {
             case R.id.action_settings:
+                Intent prefsIntent = new Intent (MainActivity.this, PreferencesActivity.class);
+                startActivity(prefsIntent);
                 return true;
             case R.id.action_add:
                 Intent intent = new Intent(MainActivity.this, AddWalletActivity.class);
@@ -280,14 +293,14 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
 
     /**
      * Populates the RecyclerView with the list of Wallets
-     * @param walletList
+     * @param walletList - list of wallet objects
      */
     private void populateWallets(final List<Wallet> walletList) {
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
                 // prepare recycler view
-                walletAdapter = new WalletAdapter(walletList);
+                //walletAdapter = new WalletAdapter(walletList);
                 RecyclerView.LayoutManager mLayoutManager = new LinearLayoutManager(getApplicationContext());
                 recyclerView.setLayoutManager(mLayoutManager);
                 recyclerView.setItemAnimator(new DefaultItemAnimator());

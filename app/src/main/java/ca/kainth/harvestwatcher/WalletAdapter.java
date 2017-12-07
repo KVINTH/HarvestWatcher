@@ -14,6 +14,7 @@ import ca.kainth.harvestwatcher.db.Wallet;
 public class WalletAdapter extends RecyclerView.Adapter<WalletAdapter.WalletViewHolder> {
 
     private List<Wallet> walletList;
+    ItemClickListener clickListener;
 
     class WalletViewHolder extends RecyclerView.ViewHolder {
         TextView tvWalletAlias, tvWalletAddress, tvWalletBalance;
@@ -26,9 +27,10 @@ public class WalletAdapter extends RecyclerView.Adapter<WalletAdapter.WalletView
         }
     }
 
-    WalletAdapter(List<Wallet> walletList)
+    WalletAdapter(List<Wallet> walletList, ItemClickListener clickListener)
     {
         this.walletList = walletList;
+        this.clickListener = clickListener;
     }
 
     public void setAdapterItems(List<Wallet> walletList) {
@@ -37,10 +39,17 @@ public class WalletAdapter extends RecyclerView.Adapter<WalletAdapter.WalletView
 
     @Override
     public WalletViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-        View itemView = LayoutInflater.from(parent.getContext())
+        final View itemView = LayoutInflater.from(parent.getContext())
                 .inflate(R.layout.wallet_list_row, parent, false);
+        final WalletViewHolder mViewHolder = new WalletViewHolder(itemView);
+        itemView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                clickListener.onItemClick(itemView, mViewHolder.getAdapterPosition());
+            }
+        });
 
-        return new WalletViewHolder(itemView);
+        return mViewHolder;
     }
 
     @Override

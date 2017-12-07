@@ -29,7 +29,9 @@ public class App extends Application {
 
         // create database
         walletDatabase = Room.databaseBuilder(getApplicationContext(), WalletDatabase.class, DATABASE_NAME)
-                //.addMigrations(WalletDatabase.MIGRATION_1_2)
+                .fallbackToDestructiveMigration()
+//                .addMigrations(WalletDatabase.MIGRATION_1_2)
+//                .addMigrations(WalletDatabase.MIGRATION_2_3)
                 .build();
 
         INSTANCE = this;

@@ -8,9 +8,6 @@ import android.arch.persistence.room.Update;
 
 import java.util.List;
 
-/**
- * Created by Harry on 11/25/2017.
- */
 @Dao
 public interface WalletDao {
 
