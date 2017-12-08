@@ -17,7 +17,9 @@ import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.android.volley.Request;
 import com.android.volley.RequestQueue;
+import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
@@ -28,6 +30,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import ca.kainth.harvestwatcher.db.Wallet;
+
+import static ca.kainth.harvestwatcher.Constants.HMC_BTC_RATE_ENDPOINT;
 
 public class MainActivity extends AppCompatActivity implements SwipeRefreshLayout.OnRefreshListener{
 
@@ -43,11 +47,9 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
     private List<Wallet> walletList = new ArrayList<>();
     private RecyclerView recyclerView;
     private WalletAdapter walletAdapter;
-    private TextView tvTotalBalance;
+    private TextView tvTotalBalance, tvCurrency;
+    private double currentExchangeRate = 0;
     SwipeRefreshLayout mSwipeRefreshLayout;
-
-    private ArrayList<String> harvestWalletAddresses = new ArrayList<>();
-    private ArrayList<String> harvestWalletDisplayTags = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -57,6 +59,7 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
          //set toolbar
         Toolbar myToolbar = findViewById(R.id.my_toolbar);
         setSupportActionBar(myToolbar);
+        loadHCBTCRateFromAPI();
 
         // USE WALLET INFORMATION TO ACCESS WALLET ADDRESS TO LOAD BALANCE FROM API
         // ADD BALANCE TO THE EXISTING WALLET IN DATABASE
@@ -65,6 +68,7 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
         // set views
         recyclerView = findViewById(R.id.recycler_view);
         tvTotalBalance = findViewById(R.id.tvTotalBalance);
+        tvCurrency = findViewById(R.id.tvCurrency);
         mSwipeRefreshLayout = findViewById(R.id.swipe_container);
         mSwipeRefreshLayout.setOnRefreshListener(this);
         walletAdapter = new WalletAdapter(walletList, new ItemClickListener() {
@@ -241,6 +245,23 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
         }
     }
 
+    private void loadHCBTCRateFromAPI() {
+        RequestQueue queue = Volley.newRequestQueue(this);
+
+        StringRequest stringRequest = new StringRequest(Request.Method.GET,
+                HMC_BTC_RATE_ENDPOINT, new Response.Listener<String>() {
+            @Override
+            public void onResponse(String response) {
+                currentExchangeRate = parseHCBTCRate(response);
+            }
+        }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                Toast.makeText(MainActivity.this, "Error occurred while loading exchange rate.", Toast.LENGTH_SHORT).show();
+            }
+        });
+        queue.add(stringRequest);
+    }
     /**
      * This method creates a new request for Wallet information from the API
      * @param address - the wallet address to get information for
@@ -269,6 +290,18 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
         queue.add(stringRequest);
     }
 
+    private double parseHCBTCRate(String body) {
+        double rate = 0;
+        try {
+            JSONObject jsonObject = new JSONObject(body);
+            JSONObject data = jsonObject.getJSONObject("Data");
+            rate = data.getDouble("LastPrice");
+
+        } catch (Exception e) {
+            Toast.makeText(this, e.getMessage(), Toast.LENGTH_SHORT).show();
+        }
+        return rate;
+    }
     /**
      * This method parses a JSON response for the balance of the wallet.
      * @param body - JSON Response from Harvest Wallet API
@@ -307,7 +340,15 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
                 walletAdapter.setAdapterItems(walletList);
                 recyclerView.setAdapter(walletAdapter);
                 //refreshData();
-                tvTotalBalance.setText(String.valueOf(calculateTotalBalance(walletList)));
+                SharedPreferences preferences = getSharedPreferences(PREFS_NAME, 0);
+                if (preferences.contains("displayCurrency") &&
+                        preferences.getString("displayCurrency", "ERR").equals("BTC")) {
+                    double balance = calculateTotalBalance(walletList);
+                    double balanceInBitcoin = balance * currentExchangeRate;
+                    tvTotalBalance.setText(String.valueOf(balanceInBitcoin));
+                } else {
+                    tvTotalBalance.setText(String.valueOf(calculateTotalBalance(walletList)));
+                }
                 mSwipeRefreshLayout.setRefreshing(false);
             }
         });
@@ -319,11 +360,10 @@ public class MainActivity extends AppCompatActivity implements SwipeRefreshLayou
     private void loadSettings() {
         SharedPreferences settings = getSharedPreferences(PREFS_NAME, 0);
 
-        for (int i = 0; i < 10; i++) {
-            if (settings.contains("W" + (i + 1) + "Alias")) {
-                harvestWalletAddresses.add(i, settings.getString("W" + (i + 1) + "Address", "NA"));
-                harvestWalletDisplayTags.add(i, settings.getString("W" + (i + 1) + "Alias", "NA"));
-            }
+        if (settings.contains("displayCurrency")) {
+            String displayCurrency = settings.getString("displayCurrency", "ERR");
+            tvCurrency.setText(displayCurrency);
+
         }
     }
 

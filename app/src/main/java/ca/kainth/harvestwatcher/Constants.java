@@ -9,6 +9,7 @@ public final class Constants {
     private Constants() {
 
     }
+    public static final String PREFS_NAME = "KAINTHCA_CRYPTO_PREFS_FILE";
     public static final String BTC_API_ENDPOINT = "https://api.coindesk.com/v1/bpi/currentprice.json";
     public static final String HC_API_ENDPOINT = "https://coinsmarkets.com/apicoin.php";
     public static final String HMC_ADDRESS_ENDPOINT = "http://hmcexplorer.com/ext/getaddress/";

@@ -29,6 +29,38 @@ import static ca.kainth.harvestwatcher.Constants.HMC_ADDRESS_ENDPOINT;
 import static ca.kainth.harvestwatcher.Constants.HMC_TRANSACTION_DECRYPTED;
 import static ca.kainth.harvestwatcher.Constants.HMC_TRANSACTION_ENDPOINT;
 
+/**
+ * The purpose of this activity was to display a list of transactions that have occurred for the
+ * wallet that is passed in with the intent.
+ *
+ * Unfortunately at the time of my writing the transaction endpoint is down, which has prevented me
+ * from ensuring this activity works 100%. So for your reference I am going to include a small
+ * write up to let you know my intentions with this activity.
+ *
+ * Here is a step by step of what is supposed to happen:
+ * 1. Load Wallet object from DB using walletId passed in intent
+ *      - maybe I can pass in the wallet object as a whole to prevent another read from the DB
+ *
+ * 2. Load wallet information from API using the wallet address contained in wallet object
+ *      - need to load wallet information from API again to get transaction ids
+ *
+ * 3. Add transaction to DB
+ *      - adds the transaction id to the database and associates it with the current wallet
+ *
+ * 4. Load transaction data from API
+ *      - because the previous endpoint didn't contain the actual data, only the transaction id
+ *
+ * 5. Save transaction data to DB
+ *      - now that we have the value and timestamp of the transaction we can save it to the DB
+ *
+ * 6. Display list to user
+ *      - self explanatory.
+ *
+ * If you care to see if I have updated this activity, check https://github.com/KVINTH/HarvestWatcher
+ *
+ * once I have everything figured out, this large comment block will be gone.
+ */
+
 public class WalletDetailsActivity extends AppCompatActivity {
     TextView tvWalletAddress;
     long walletId;
